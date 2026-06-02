@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeSphere Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0f1e; --surface: #111827; --surface2: #1a2235;
+      --border: #1e2d45; --accent: #3b82f6; --accent2: #06b6d4;
+      --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+      --purple: #8b5cf6; --text: #e2e8f0; --muted: #64748b;
+      --mono: 'DM Mono', monospace; --sans: 'Sora', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 60px; background: var(--surface);
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--accent); }
+    .logo-box { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .8rem; color: #fff; font-weight: 700; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: .85rem; font-weight: 500; color: var(--muted); border: none; background: none; font-family: var(--sans); transition: all .15s; }
+    .nav-tab:hover { background: var(--surface2); color: var(--text); }
+    .nav-tab.active { background: var(--accent); color: #fff; }
+    .live-badge { display: flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--green); }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+    .layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 60px); }
+    .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: .3rem; }
+    .sidebar-label { font-size: .68rem; font-weight: 600; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin: 1rem 0 .4rem .5rem; }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: .85rem; color: var(--muted); border: none; background: none; width: 100%; text-align: left; font-family: var(--sans); transition: all .15s; }
+    .sidebar-item:hover { background: var(--surface2); color: var(--text); }
+    .sidebar-item.active { background: rgba(59,130,246,.15); color: var(--accent); }
+    main { padding: 2rem; overflow-y: auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.4rem; font-weight: 700; }
+    .page-header p { color: var(--muted); font-size: .88rem; margin-top: .3rem; }
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg,var(--accent),var(--accent2)); }
+    .stat-label { font-size: .73rem; color: var(--muted); margin-bottom: .5rem; }
+    .stat-value { font-size: 1.7rem; font-weight: 700; font-family: var(--mono); }
+    .stat-sub { font-size: .73rem; color: var(--green); margin-top: .25rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.4rem; }
+    .card-title { font-size: .95rem; font-weight: 600; }
+    .card-subtitle { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: .76rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-family: var(--sans); font-size: .88rem; outline: none; transition: border-color .15s; width: 100%; }
+    input:focus, select:focus { border-color: var(--accent); }
+    input:read-only { opacity: .65; cursor: not-allowed; }
+    select option { background: var(--surface2); }
+    .currency-preview {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 6px; font-size: .78rem; font-weight: 700;
+      font-family: var(--mono); letter-spacing: .05em;
+      background: rgba(16,185,129,.1); color: var(--green);
+      border: 1px solid rgba(16,185,129,.25);
+    }
+    .currency-note { font-size: .72rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--sans); font-size: .84rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-sm { padding: 5px 12px; font-size: .77rem; }
+    .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+    .btn-danger:hover { background: rgba(239,68,68,.1); }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    th { text-align: left; padding: 10px 12px; font-size: .7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--border); }
+    td { padding: 11px 12px; border-bottom: 1px solid rgba(30,45,69,.5); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .mono { font-family: var(--mono); font-size: .81rem; }
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .badge-active, .badge-buy      { background: rgba(16,185,129,.15); color: var(--green); }
+    .badge-inactive,.badge-cancelled{ background: rgba(100,116,139,.15);color: var(--muted); }
+    .badge-sell     { background: rgba(239,68,68,.15);  color: var(--red); }
+    .badge-executed { background: rgba(59,130,246,.15); color: var(--accent); }
+    .badge-pending  { background: rgba(245,158,11,.15); color: var(--yellow); }
+    .badge-individual{ background: rgba(6,182,212,.15); color: var(--accent2); }
+    .badge-corporate { background: rgba(139,92,246,.15);color: var(--purple); }
+    .badge-currency { background: rgba(16,185,129,.1); color: var(--green); border: 1px solid rgba(16,185,129,.2); padding: 2px 7px; border-radius: 4px; font-family: var(--mono); font-size: .72rem; font-weight: 700; }
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-size: .84rem; transform: translateY(100px); opacity: 0; transition: all .3s; max-width: 360px; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 3px solid var(--green); }
+    #toast.error   { border-left: 3px solid var(--red); }
+    .empty-state { text-align: center; padding: 3rem; color: var(--muted); font-size: .88rem; }
+    .sre-info { margin-top: auto; padding: .75rem; background: rgba(16,185,129,.07); border: 1px solid rgba(16,185,129,.18); border-radius: 8px; font-size: .73rem; color: #34d399; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-box">TS</div> TradeSphere</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('accounts')">Accounts</button>
+    <button class="nav-tab" onclick="showPage('users')">Users</button>
+    <button class="nav-tab" onclick="showPage('trades')">Trades</button>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div> Live</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-label">Navigation</div>
+    <button class="sidebar-item active" onclick="showPage('dashboard')">⬡ Dashboard</button>
+    <button class="sidebar-item" onclick="showPage('accounts')">◈ Accounts</button>
+    <button class="sidebar-item" onclick="showPage('users')">◉ Users</button>
+    <button class="sidebar-item" onclick="showPage('trades')">◐ Trades</button>
+    <div class="sidebar-label">REST API</div>
+    <button class="sidebar-item" onclick="toast('/api/accounts/','info')">↗ /api/accounts</button>
+    <button class="sidebar-item" onclick="toast('/api/users/','info')">↗ /api/users</button>
+    <button class="sidebar-item" onclick="toast('/api/trades/','info')">↗ /api/trades</button>
+    <button class="sidebar-item" onclick="toast('/health/ready','info')">♡ /health/ready</button>
+    <div class="sre-info">
+      <strong>SRE Demo Platform</strong><br>
+      <span style="color:var(--muted)">Flask · SQLite · REST API<br>Docker · K8s · Helm</span>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ══ DASHBOARD ══════════════════════════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1>Overview</h1>
+        <p>Platform health and recent activity</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Accounts</div>
+          <div class="stat-value" id="st-accounts">—</div>
+          <div class="stat-sub">registered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value" id="st-users">—</div>
+          <div class="stat-sub">across accounts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Trades</div>
+          <div class="stat-value" id="st-trades">—</div>
+          <div class="stat-sub">executed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">API Health</div>
+          <div class="stat-value" id="st-health" style="font-size:1rem;color:var(--green)">Checking…</div>
+          <div class="stat-sub">readiness probe</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Recent Trades</div>
+            <div class="card-subtitle">Latest 10 — currency shown per trade</div>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="loadDashboard()">Refresh</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th><th>Symbol</th><th>Type</th>
+              <th>Qty</th><th>Price</th><th>Total</th>
+              <th>Currency</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="dash-trades"><tr><td colspan="8"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ ACCOUNTS ═══════════════════════════════════════════════════════ -->
+    <div class="page" id="page-accounts">
+      <div class="page-header">
+        <h1>Accounts</h1>
+        <p>The currency you set here will be used automatically on all trades for this account</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Create Account</div></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Holder Name *</label><input id="a-name" placeholder="Jane Doe"></div>
+          <div class="form-group"><label>Email *</label><input type="email" id="a-email" placeholder="jane@example.com"></div>
+          <div class="form-group"><label>Phone</label><input id="a-phone" placeholder="+91 98765 43210"></div>
+          <div class="form-group"><label>Account Type</label>
+            <select id="a-type">
+              <option value="individual">Individual</option>
+              <option value="corporate">Corporate</option>
+              <option value="institutional">Institutional</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Account Currency</label>
+            <select id="a-curr">
+              <option value="USD">USD — US Dollar</option>
+              <option value="INR">INR — Indian Rupee</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="SGD">SGD — Singapore Dollar</option>
+              <option value="AED">AED — UAE Dirham</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Initial Balance</label><input type="number" id="a-bal" placeholder="0.00" step="0.01"></div>
+        </div>
+        <div class="divider"></div>
+        <button class="btn btn-primary" onclick="createAccount()">+ Create Account</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Accounts</div>
+          <button class="btn btn-sm btn-primary" onclick="loadAccounts()">Refresh</button>
+        </div>
+        <table>
+          <thead><tr><th>Account #</th><th>Holder</th><th>Email</th><th>Type</th><th>Currency</th><th>Balance</th><th>Status</th><th></th></tr></thead>
+          <tbody id="acc-tbody"><tr><td colspan="8"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ USERS ══════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-users">
+      <div class="page-header"><h1>Users</h1><p>Add users and assign them to accounts</p></div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Add User</div></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Username *</label><input id="u-uname" placeholder="j.doe"></div>
+          <div class="form-group"><label>Full Name *</label><input id="u-fname" placeholder="Jane Doe"></div>
+          <div class="form-group"><label>Email *</label><input type="email" id="u-email" placeholder="jane@example.com"></div>
+          <div class="form-group"><label>Role</label>
+            <select id="u-role">
+              <option value="trader">Trader</option>
+              <option value="analyst">Analyst</option>
+              <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Assign Account</label>
+            <select id="u-acc"><option value="">— None —</option></select>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <button class="btn btn-success" onclick="createUser()">+ Add User</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Users</div>
+          <button class="btn btn-sm btn-primary" onclick="loadUsers()">Refresh</button>
+        </div>
+        <table>
+          <thead><tr><th>Username</th><th>Full Name</th><th>Email</th><th>Role</th><th>Account</th><th>Status</th><th></th></tr></thead>
+          <tbody id="usr-tbody"><tr><td colspan="7"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ TRADES ═════════════════════════════════════════════════════════ -->
+    <div class="page" id="page-trades">
+      <div class="page-header">
+        <h1>Trades</h1>
+        <p>Select an account first — the currency is automatically set from the account</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">New Trade</div></div>
+        <div class="form-grid three">
+
+          <!-- Account selector — when changed, currency auto-fills below -->
+          <div class="form-group">
+            <label>Account *</label>
+            <select id="t-acc" onchange="onAccountChange()">
+              <option value="">— Select Account —</option>
+            </select>
+          </div>
+
+          <!-- User selector -->
+          <div class="form-group">
+            <label>User *</label>
+            <select id="t-usr"><option value="">— Select User —</option></select>
+          </div>
+
+          <!-- Symbol -->
+          <div class="form-group">
+            <label>Symbol *</label>
+            <input id="t-sym" placeholder="AAPL / RELIANCE / BTC">
+          </div>
+
+          <!-- Trade type -->
+          <div class="form-group">
+            <label>Trade Type *</label>
+            <select id="t-type">
+              <option value="BUY">BUY</option>
+              <option value="SELL">SELL</option>
+            </select>
+          </div>
+
+          <!-- Quantity -->
+          <div class="form-group">
+            <label>Quantity *</label>
+            <input type="number" id="t-qty" placeholder="100" step="0.01">
+          </div>
+
+          <!-- Price per unit -->
+          <div class="form-group">
+            <label>Price per Unit *</label>
+            <input type="number" id="t-price" placeholder="150.00" step="0.01">
+          </div>
+
+          <!--
+            CURRENCY FIELD — read-only, auto-filled from the selected account.
+            The user cannot type here; selecting the account sets the currency.
+            This prevents the original bug of mismatched currencies.
+          -->
+          <div class="form-group">
+            <label>Currency (from Account)</label>
+            <input id="t-currency" readonly placeholder="Select account first"
+                   title="Currency is automatically set from the selected account">
+            <span class="currency-note">Auto-set from account — cannot be changed independently</span>
+          </div>
+
+          <!-- Live total value preview — updates as user types qty/price -->
+          <div class="form-group">
+            <label>Total Value (preview)</label>
+            <input id="t-total" readonly placeholder="—"
+                   title="Calculated as quantity × price">
+            <span class="currency-note">quantity × price</span>
+          </div>
+
+          <!-- Notes full width -->
+          <div class="form-group full">
+            <label>Notes</label>
+            <input id="t-notes" placeholder="Optional trade notes">
+          </div>
+
+        </div>
+        <div class="divider"></div>
+        <button class="btn btn-primary" onclick="createTrade()">⚡ Execute Trade</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Trade Log</div>
+          <button class="btn btn-sm btn-primary" onclick="loadTrades()">Refresh</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Ref</th><th>Symbol</th><th>Type</th>
+              <th>Qty</th><th>Price</th><th>Total</th>
+              <th>Currency</th><th>Status</th><th>Date</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="trd-tbody"><tr><td colspan="10"><div class="empty-state">Loading…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab, .sidebar-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll(`[onclick="showPage('${name}')"]`).forEach(b => b.classList.add('active'));
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'accounts')  loadAccounts();
+  if (name === 'users')     { loadUsers(); populateAccountSelect('u-acc'); }
+  if (name === 'trades')    { loadTrades(); populateAccountSelect('t-acc'); populateUserSelect('t-usr'); }
+}
+
+// ── Toast notifications ────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = (type === 'error' ? '✗ ' : type === 'info' ? 'ℹ ' : '✓ ') + msg;
+  el.className = 'show ' + (type === 'info' ? 'success' : type);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+// ── API helper ─────────────────────────────────────────────────────────────────
+async function api(path, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(path, opts);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function fmtNum(n) { return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtDate(s) { return new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' }); }
+
+// ── CURRENCY: badge helper ─────────────────────────────────────────────────────
+function currencyBadge(curr) {
+  return `<span class="badge-currency">${curr || 'USD'}</span>`;
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [accts, usrs, trds, health] = await Promise.all([
+      api('/api/accounts/'), api('/api/users/'), api('/api/trades/'), api('/health/ready')
+    ]);
+    document.getElementById('st-accounts').textContent = accts.total;
+    document.getElementById('st-users').textContent    = usrs.total;
+    document.getElementById('st-trades').textContent   = trds.total;
+    document.getElementById('st-health').textContent   = health.status === 'ready' ? '● Ready' : '✗ Error';
+
+    const rows = trds.trades.slice(0, 10);
+    document.getElementById('dash-trades').innerHTML = rows.length
+      ? rows.map(t => `
+          <tr>
+            <td class="mono">${t.trade_ref}</td>
+            <td><strong>${t.symbol}</strong></td>
+            <td><span class="badge badge-${t.trade_type.toLowerCase()}">${t.trade_type}</span></td>
+            <td class="mono">${fmtNum(t.quantity)}</td>
+            <td class="mono">${fmtNum(t.price)}</td>
+            <td class="mono"><strong>${fmtNum(t.total_value)}</strong></td>
+            <td>${currencyBadge(t.currency)}</td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+          </tr>`).join('')
+      : '<tr><td colspan="8"><div class="empty-state">No trades yet — go to Trades tab to add one</div></td></tr>';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Accounts ───────────────────────────────────────────────────────────────────
+async function loadAccounts() {
+  try {
+    const { accounts } = await api('/api/accounts/');
+    document.getElementById('acc-tbody').innerHTML = accounts.length
+      ? accounts.map(a => `
+          <tr>
+            <td class="mono">${a.account_number}</td>
+            <td><strong>${a.holder_name}</strong></td>
+            <td>${a.email}</td>
+            <td><span class="badge badge-${a.account_type}">${a.account_type}</span></td>
+            <td>${currencyBadge(a.currency)}</td>
+            <td class="mono">${fmtNum(a.balance)}</td>
+            <td><span class="badge badge-${a.status}">${a.status}</span></td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">Delete</button></td>
+          </tr>`).join('')
+      : '<tr><td colspan="8"><div class="empty-state">No accounts yet</div></td></tr>';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function createAccount() {
+  try {
+    const b = {
+      holder_name:     document.getElementById('a-name').value,
+      email:           document.getElementById('a-email').value,
+      phone:           document.getElementById('a-phone').value,
+      account_type:    document.getElementById('a-type').value,
+      currency:        document.getElementById('a-curr').value,
+      initial_balance: parseFloat(document.getElementById('a-bal').value || 0),
+    };
+    if (!b.holder_name || !b.email) return toast('Name and email are required', 'error');
+    await api('/api/accounts/', 'POST', b);
+    toast(`Account created in ${b.currency}`);
+    ['a-name','a-email','a-phone','a-bal'].forEach(id => document.getElementById(id).value = '');
+    loadAccounts();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteAccount(id) {
+  if (!confirm('Delete this account? This cannot be undone.')) return;
+  try { await api('/api/accounts/' + id, 'DELETE'); toast('Account deleted'); loadAccounts(); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    const { users } = await api('/api/users/');
+    document.getElementById('usr-tbody').innerHTML = users.length
+      ? users.map(u => `
+          <tr>
+            <td class="mono">${u.username}</td>
+            <td><strong>${u.full_name}</strong></td>
+            <td>${u.email}</td>
+            <td><span class="badge badge-active">${u.role}</span></td>
+            <td class="mono">${u.account_id || '—'}</td>
+            <td><span class="badge badge-${u.is_active ? 'active' : 'inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">Delete</button></td>
+          </tr>`).join('')
+      : '<tr><td colspan="7"><div class="empty-state">No users yet</div></td></tr>';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function createUser() {
+  try {
+    const b = {
+      username:   document.getElementById('u-uname').value,
+      full_name:  document.getElementById('u-fname').value,
+      email:      document.getElementById('u-email').value,
+      role:       document.getElementById('u-role').value,
+      account_id: document.getElementById('u-acc').value || null,
+    };
+    if (!b.username || !b.full_name || !b.email) return toast('Username, name and email required', 'error');
+    if (b.account_id) b.account_id = parseInt(b.account_id);
+    await api('/api/users/', 'POST', b);
+    toast('User added successfully');
+    ['u-uname','u-fname','u-email'].forEach(id => document.getElementById(id).value = '');
+    loadUsers();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user?')) return;
+  try { await api('/api/users/' + id, 'DELETE'); toast('User deleted'); loadUsers(); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Trades ─────────────────────────────────────────────────────────────────────
+
+// Cache accounts so onAccountChange can look up currency instantly
+let _accountsCache = [];
+
+async function populateAccountSelect(selectId) {
+  try {
+    const { accounts } = await api('/api/accounts/');
+    _accountsCache = accounts;
+    const sel = document.getElementById(selectId);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Select Account —</option>'
+      + accounts.map(a =>
+          `<option value="${a.id}" data-currency="${a.currency}">
+             ${a.account_number} — ${a.holder_name} (${a.currency})
+           </option>`
+        ).join('');
+    sel.value = cur;
+  } catch(e) {}
+}
+
+async function populateUserSelect(selectId) {
+  try {
+    const { users } = await api('/api/users/');
+    const sel = document.getElementById(selectId);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Select User —</option>'
+      + users.map(u => `<option value="${u.id}">${u.username} (${u.full_name})</option>`).join('');
+    sel.value = cur;
+  } catch(e) {}
+}
+
+async function populateAccountSelect(selectId) {
+  try {
+    const { accounts } = await api('/api/accounts/');
+    _accountsCache = accounts;
+    const sel = document.getElementById(selectId);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Select Account —</option>'
+      + accounts.map(a =>
+          `<option value="${a.id}" data-currency="${a.currency}">
+             ${a.account_number} — ${a.holder_name} (${a.currency})
+           </option>`
+        ).join('');
+    sel.value = cur;
+    // If an account was already selected before refresh, re-apply currency
+    if (selectId === 't-acc' && cur) onAccountChange();
+  } catch(e) {}
+}
+
+// Called every time the account dropdown changes on the Trades form.
+// Reads the account's currency from the selected option and fills the
+// read-only currency field — this is the core fix.
+function onAccountChange() {
+  const sel     = document.getElementById('t-acc');
+  const opt     = sel.options[sel.selectedIndex];
+  const curr    = opt ? opt.getAttribute('data-currency') : '';
+  const currEl  = document.getElementById('t-currency');
+  const totalEl = document.getElementById('t-total');
+
+  if (curr) {
+    currEl.value       = curr;
+    currEl.placeholder = curr;
+  } else {
+    currEl.value       = '';
+    currEl.placeholder = 'Select account first';
+  }
+  // Recalculate total preview with new currency label
+  updateTotalPreview();
+}
+
+// Live preview: quantity × price with currency label
+function updateTotalPreview() {
+  const qty   = parseFloat(document.getElementById('t-qty').value)   || 0;
+  const price = parseFloat(document.getElementById('t-price').value) || 0;
+  const curr  = document.getElementById('t-currency').value || '';
+  const total = document.getElementById('t-total');
+  if (qty > 0 && price > 0) {
+    total.value = curr
+      ? `${curr} ${fmtNum(qty * price)}`
+      : fmtNum(qty * price);
+  } else {
+    total.value = '';
+  }
+}
+
+async function loadTrades() {
+  try {
+    const { trades } = await api('/api/trades/');
+    document.getElementById('trd-tbody').innerHTML = trades.length
+      ? trades.map(t => `
+          <tr>
+            <td class="mono">${t.trade_ref}</td>
+            <td><strong>${t.symbol}</strong></td>
+            <td><span class="badge badge-${t.trade_type.toLowerCase()}">${t.trade_type}</span></td>
+            <td class="mono">${fmtNum(t.quantity)}</td>
+            <td class="mono">${fmtNum(t.price)}</td>
+            <td class="mono"><strong>${fmtNum(t.total_value)}</strong></td>
+            <td>${currencyBadge(t.currency)}</td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+            <td class="mono" style="font-size:.73rem">${fmtDate(t.created_at)}</td>
+            <td>${t.status !== 'cancelled'
+              ? `<button class="btn btn-danger btn-sm" onclick="cancelTrade(${t.id})">Cancel</button>`
+              : '—'
+            }</td>
+          </tr>`).join('')
+      : '<tr><td colspan="10"><div class="empty-state">No trades yet</div></td></tr>';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function createTrade() {
+  try {
+    const accId  = document.getElementById('t-acc').value;
+    const usrId  = document.getElementById('t-usr').value;
+    const sym    = document.getElementById('t-sym').value.trim();
+    const type   = document.getElementById('t-type').value;
+    const qty    = document.getElementById('t-qty').value;
+    const price  = document.getElementById('t-price').value;
+    const curr   = document.getElementById('t-currency').value;
+    const notes  = document.getElementById('t-notes').value;
+
+    if (!accId)  return toast('Please select an account', 'error');
+    if (!usrId)  return toast('Please select a user', 'error');
+    if (!sym)    return toast('Symbol is required', 'error');
+    if (!qty || parseFloat(qty) <= 0)   return toast('Enter a valid quantity', 'error');
+    if (!price || parseFloat(price) <= 0) return toast('Enter a valid price', 'error');
+    if (!curr)   return toast('No currency — please select an account first', 'error');
+
+    // currency is sent to the API but it just confirms what the account already has.
+    // The API will auto-inherit it anyway; this is just belt-and-braces.
+    const body = {
+      account_id: parseInt(accId),
+      user_id:    parseInt(usrId),
+      symbol:     sym,
+      trade_type: type,
+      quantity:   parseFloat(qty),
+      price:      parseFloat(price),
+      currency:   curr,
+      notes,
+    };
+
+    const res = await api('/api/trades/', 'POST', body);
+    const t   = res.trade;
+    toast(`Trade ${t.trade_ref} executed — ${t.currency} ${fmtNum(t.total_value)}`);
+
+    // Clear only the per-trade fields, keep account/user selected for next trade
+    ['t-sym','t-qty','t-price','t-notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('t-total').value = '';
+    loadTrades();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function cancelTrade(id) {
+  if (!confirm('Cancel this trade?')) return;
+  try { await api('/api/trades/' + id + '/cancel', 'POST'); toast('Trade cancelled'); loadTrades(); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Wire up live total preview ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('t-qty').addEventListener('input', updateTotalPreview);
+  document.getElementById('t-price').addEventListener('input', updateTotalPreview);
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
