@@ -1,17 +1,17 @@
-        .dockerignore
-        chaostoolkit.log
-        chaosui/venv-chaosui/
-        jmeter.log
-        journal.json
-        make_report.py
-        projects.code-workspace
-        terraform/.terraform.lock.hcl
-        terraform/.terraform/
-        terraform/chaostoolkit.log
-        terraform/terraform.tfstate
-        terraform/terraform.tfstate.backup
-        venv-chaosui/
-        venv/
-        venv-chaosui/
-        __pycache__/
-        *.pyc
+.dockerignore
+chaostoolkit.log
+chaosui/venv-chaosui/
+jmeter.log
+journal.json
+make_report.py
+projects.code-workspace
+terraform/.terraform.lock.hcl
+terraform/.terraform/
+terraform/chaostoolkit.log
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+venv-chaosui/
+venv/
+venv-chaosui/
+__pycache__/
+*.pyc
