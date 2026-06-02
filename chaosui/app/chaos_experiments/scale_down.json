@@ -1,0 +1,52 @@
+{
+  "version": "1.0.0",
+  "title": "TradeSphere — Scale-Down Stress Test",
+  "description": "Scales deployment to 1 replica. Validates service under reduced capacity. Auto-rollback restores 2 replicas.",
+  "tags": ["kubernetes", "scale", "stress", "tradesphere"],
+  "configuration": {
+    "app_namespace": {"type":"env","key":"APP_NAMESPACE","default":"tradesphere"},
+    "app_url":       {"type":"env","key":"APP_URL","default":"http://localhost:8080"}
+  },
+  "steady-state-hypothesis": {
+    "title": "App healthy with 2 replicas",
+    "probes": [
+      {
+        "name": "health-check",
+        "type": "probe",
+        "tolerance": 200,
+        "provider": {"type":"http","url":"${app_url}/health/ready","timeout":5}
+      }
+    ]
+  },
+  "method": [
+    {
+      "name": "scale-down-to-one-replica",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosk8s.deployment.actions",
+        "func": "scale_deployment",
+        "arguments": {"name":"tradesphere-app","replicas":1,"ns":"${app_namespace}"}
+      },
+      "pauses": {"after": 15}
+    },
+    {
+      "name": "probe-under-single-replica",
+      "type": "probe",
+      "tolerance": 200,
+      "provider": {"type":"http","url":"${app_url}/health/ready","timeout":10}
+    }
+  ],
+  "rollbacks": [
+    {
+      "name": "restore-replica-count",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosk8s.deployment.actions",
+        "func": "scale_deployment",
+        "arguments": {"name":"tradesphere-app","replicas":2,"ns":"${app_namespace}"}
+      }
+    }
+  ]
+}

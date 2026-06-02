@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeSphere — Chaos Control Center</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#040810;--bg2:#07101f;--surface:#0c1828;--card:#0f1e30;
+  --border:#162438;--border2:#1e3252;
+  --accent:#0ea5e9;--cyan:#06d6c8;--green:#22c55e;
+  --yellow:#eab308;--red:#ef4444;--orange:#f97316;--purple:#a855f7;
+  --text:#cdd9ef;--muted:#4a6080;--dim:#1a2d45;
+  --mono:'JetBrains Mono',monospace;--display:'Rajdhani',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Animations ────────────────────────────────────────────────────────────── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes ping{0%{transform:scale(1);opacity:.8}100%{transform:scale(2.2);opacity:0}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes gridPulse{0%,100%{opacity:.04}50%{opacity:.08}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes progressShine{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Background grid ───────────────────────────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(14,165,233,.06) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(14,165,233,.06) 1px,transparent 1px);
+  background-size:44px 44px;
+  animation:gridPulse 5s ease-in-out infinite;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.wrap{position:relative;z-index:1;display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* ── Sidebar ───────────────────────────────────────────────────────────────── */
+.sidebar{
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border)}
+.logo-title{font-family:var(--display);font-size:21px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+.live-badge{
+  display:inline-flex;align-items:center;gap:5px;margin-top:10px;
+  padding:4px 10px;background:rgba(34,197,94,.08);
+  border:1px solid rgba(34,197,94,.22);border-radius:20px;
+  font-size:9px;color:var(--green);letter-spacing:.08em;text-transform:uppercase;
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.nav-sec{padding:14px 10px 4px}
+.nav-lbl{font-size:8px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;padding:0 8px;margin-bottom:6px}
+.nav-btn{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:9px 10px;border-radius:8px;border:none;background:none;
+  cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--mono);
+  text-align:left;transition:all .15s;position:relative;
+}
+.nav-btn:hover{background:rgba(14,165,233,.07);color:var(--text)}
+.nav-btn.active{background:rgba(14,165,233,.12);color:var(--accent)}
+.nav-btn.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:18px;background:var(--accent);border-radius:0 3px 3px 0;
+}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.sidebar-foot{
+  margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);
+  font-size:9px;color:var(--muted);line-height:1.8;
+}
+.sidebar-foot .hi{color:var(--accent);font-weight:700}
+
+/* ── Main ──────────────────────────────────────────────────────────────────── */
+.main{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Topbar ────────────────────────────────────────────────────────────────── */
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 24px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:40;
+}
+.topbar-title{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.05em}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-stat{text-align:center}
+.topbar-stat-val{font-size:14px;font-weight:700}
+.topbar-stat-lbl{font-size:8px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.divider-v{width:1px;height:28px;background:var(--border)}
+.target-pill{
+  display:flex;align-items:center;gap:6px;padding:5px 12px;
+  background:var(--card);border:1px solid var(--border2);border-radius:6px;
+  font-size:10px;color:var(--muted);
+}
+.target-pill span{color:var(--accent);font-weight:700}
+
+/* ── Pages ─────────────────────────────────────────────────────────────────── */
+.page{display:none;padding:20px 24px;animation:fadeIn .25s ease}
+.page.active{display:block}
+.page-head{margin-bottom:20px}
+.page-head h1{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.04em}
+.page-head p{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card-title{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+
+/* ── Experiment card ───────────────────────────────────────────────────────── */
+.exp-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:20px 22px;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.exp-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--c,var(--accent)),transparent);
+}
+.exp-num{font-size:9px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.exp-title{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.03em;margin-bottom:8px}
+.exp-desc{font-size:11px;color:var(--muted);line-height:1.75;margin-bottom:16px}
+.exp-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.exp-tag{padding:3px 9px;border-radius:12px;font-size:9px;font-weight:700;border:1px solid;letter-spacing:.04em}
+
+/* ── Phase badge ───────────────────────────────────────────────────────────── */
+.phase-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 13px;border-radius:20px;
+  font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────────── */
+.progress-wrap{margin:12px 0 4px}
+.progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{
+  height:100%;border-radius:3px;transition:width .5s ease;
+  background:linear-gradient(90deg,currentColor,currentColor);
+}
+.progress-fill.running{
+  background-size:200% 100%;
+  animation:progressShine 2s linear infinite;
+}
+.progress-pct{font-size:9px;color:var(--muted);text-align:right;margin-top:3px}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 22px;border-radius:8px;border:none;cursor:pointer;
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  transition:all .18s;position:relative;overflow:hidden;
+}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:.2s}
+.btn:hover::after{background:rgba(255,255,255,.07)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.btn-red   {background:rgba(239,68,68,.15); color:var(--red);   border:1px solid rgba(239,68,68,.3)}
+.btn-purple{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+.btn-cyan  {background:rgba(14,165,233,.15);color:var(--accent);border:1px solid rgba(14,165,233,.3)}
+.btn-ghost {background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border2)}
+.btn-sm    {padding:6px 14px;font-size:10px}
+
+/* ── Sliders ───────────────────────────────────────────────────────────────── */
+.slider-group{margin-bottom:14px}
+.slider-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:6px}
+.slider-val{color:var(--accent);font-weight:700}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg);box-shadow:0 0 6px rgba(14,165,233,.5)}
+
+/* ── Timeline ──────────────────────────────────────────────────────────────── */
+.timeline{max-height:300px;overflow-y:auto;padding-right:4px}
+.tl-entry{display:flex;gap:11px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(22,36,56,.5);animation:slideIn .3s ease}
+.tl-entry:last-child{border-bottom:none}
+.tl-dot-wrap{position:relative;flex-shrink:0;margin-top:1px}
+.tl-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:1.5px solid currentColor;flex-shrink:0}
+.tl-ring{position:absolute;inset:-4px;border-radius:50%;border:1.5px solid currentColor;opacity:.3;animation:ping .9s infinite}
+.tl-ts{font-size:9px;color:var(--muted);margin-bottom:2px}
+.tl-text{font-size:11px;line-height:1.5}
+.tl-empty{font-size:11px;color:var(--dim);text-align:center;padding:24px 0}
+/* log level colors */
+.tl-info   {color:var(--text)}
+.tl-success{color:var(--green)}
+.tl-warning{color:var(--yellow)}
+.tl-error  {color:var(--red)}
+.tl-ping   {color:var(--muted)}
+
+/* ── Pod cards ─────────────────────────────────────────────────────────────── */
+.pod-list{display:flex;flex-direction:column;gap:8px}
+.pod-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:10px 13px;transition:border-color .4s,opacity .4s;
+}
+.pod-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;border:1.5px solid currentColor;
+  position:relative;
+}
+.pod-status-dot{
+  position:absolute;top:-3px;right:-3px;
+  width:9px;height:9px;border-radius:50%;border:2px solid var(--bg);
+}
+.pod-name{font-size:11px;font-weight:700;margin-bottom:2px}
+.pod-node{font-size:9px;color:var(--muted)}
+.pod-state{margin-left:auto;padding:3px 10px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+
+/* ── Result card ───────────────────────────────────────────────────────────── */
+.result-card{border-radius:14px;padding:20px 22px;border:1px solid;animation:fadeIn .4s ease;margin-bottom:14px}
+.result-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.result-title{font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:4px}
+.result-sub{font-size:10px;color:var(--muted)}
+.result-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.result-pill{display:flex;flex-direction:column;gap:3px;padding:8px 13px;border-radius:8px;min-width:74px;border:1px solid rgba(255,255,255,.05)}
+.result-pill-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.result-pill-val{font-size:17px;font-weight:700}
+.result-findings{border-top:1px solid var(--border);padding-top:12px}
+.result-finding{font-size:11px;margin-bottom:5px;display:flex;gap:7px}
+
+/* ── Grid ──────────────────────────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ── SLO bars ──────────────────────────────────────────────────────────────── */
+.slo-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.slo-name{font-size:10px;color:var(--muted);flex:1;white-space:nowrap}
+.slo-bar-wrap{flex:2;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.slo-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.slo-val{font-size:10px;font-weight:700;min-width:48px;text-align:right}
+
+/* ── Score ring ────────────────────────────────────────────────────────────── */
+.score-ring-wrap{text-align:center}
+
+/* ── History row ───────────────────────────────────────────────────────────── */
+.hist-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(22,34,56,.5)}
+.hist-row:last-child{border-bottom:none}
+.hist-type{font-size:12px;font-weight:600;margin-bottom:2px}
+.hist-dur{font-size:9px;color:var(--muted)}
+.status-pill{padding:3px 10px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.status-pill.passed{background:rgba(34,197,94,.15);color:var(--green)}
+.status-pill.completed{background:rgba(34,197,94,.15);color:var(--green)}
+.status-pill.failed{background:rgba(239,68,68,.15);color:var(--red)}
+.status-pill.deviated{background:rgba(234,179,8,.15);color:var(--yellow)}
+.status-pill.running{background:rgba(14,165,233,.15);color:var(--accent);animation:pulse 1.5s infinite}
+
+/* ── Setup steps ───────────────────────────────────────────────────────────── */
+.setup-step{display:flex;gap:14px;margin-bottom:20px;align-items:flex-start}
+.step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;border:1.5px solid}
+.step-title{font-size:13px;font-weight:700;margin-bottom:4px;font-family:var(--display)}
+.step-desc{font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+pre.cmd{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:10px;color:#7fb8d4;line-height:1.9;overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-title">⬡ CHAOS CTL</div>
+    <div class="logo-sub">TradeSphere SRE</div>
+    <div class="live-badge"><span class="live-dot"></span> Connected</div>
+  </div>
+
+  <div class="nav-sec">
+    <div class="nav-lbl">Experiments</div>
+    <button class="nav-btn active" onclick="showPage('overview')"><span class="nav-icon">◈</span> Overview</button>
+    <button class="nav-btn" onclick="showPage('pod-kill')"><span class="nav-icon">⬡</span> Pod Kill</button>
+    <button class="nav-btn" onclick="showPage('stress')"><span class="nav-icon">⊕</span> Stress Test</button>
+    <button class="nav-btn" onclick="showPage('load-test')"><span class="nav-icon">↗</span> Load Test</button>
+  </div>
+
+  <div class="nav-sec">
+    <div class="nav-lbl">Reports</div>
+    <button class="nav-btn" onclick="showPage('results')"><span class="nav-icon">◎</span> Results &amp; SLO</button>
+  </div>
+
+  <div class="nav-sec">
+    <div class="nav-lbl">Help</div>
+    <button class="nav-btn" onclick="showPage('setup')"><span class="nav-icon">⚙</span> Setup Guide</button>
+  </div>
+
+  <div class="sidebar-foot">
+    Target: <span class="hi" id="sb-target">loading…</span><br>
+    Namespace: <span class="hi" id="sb-ns">—</span><br>
+    <span style="color:var(--dim)">Chaos UI v1.0</span>
+  </div>
+</aside>
+
+<!-- ── MAIN ─────────────────────────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Overview</div>
+    <div class="topbar-right">
+      <div class="topbar-stat">
+        <div class="topbar-stat-val" id="tb-pods" style="color:var(--green)">—</div>
+        <div class="topbar-stat-lbl">Pods</div>
+      </div>
+      <div class="divider-v"></div>
+      <div class="topbar-stat">
+        <div class="topbar-stat-val" id="tb-health" style="color:var(--green)">—</div>
+        <div class="topbar-stat-lbl">Health</div>
+      </div>
+      <div class="divider-v"></div>
+      <div class="target-pill">Target: <span id="tb-target">…</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="refreshStatus()">↺ Refresh</button>
+    </div>
+  </div>
+
+  <!-- ══ OVERVIEW ══════════════════════════════════════════════════════════ -->
+  <div class="page active" id="page-overview">
+    <div class="page-head">
+      <h1>Chaos Control Center</h1>
+      <p>Select an experiment to inject faults into TradeSphere on Kubernetes</p>
+    </div>
+
+    <!-- Experiment launch cards -->
+    <div class="grid3" style="margin-bottom:16px">
+      <div class="exp-card" style="--c:var(--red)">
+        <div class="exp-num">Experiment 01</div>
+        <div class="exp-title" style="color:var(--red)">Pod Kill</div>
+        <div class="exp-desc">Terminates a random running pod. Validates K8s self-healing and measures recovery time SLO.</div>
+        <div class="exp-tags">
+          <span class="exp-tag" style="color:var(--red);border-color:rgba(239,68,68,.3)">High Impact</span>
+          <span class="exp-tag" style="color:var(--accent);border-color:rgba(14,165,233,.3)">Kubernetes</span>
+          <span class="exp-tag" style="color:var(--green);border-color:rgba(34,197,94,.3)">~60s</span>
+        </div>
+        <button class="btn btn-red" onclick="showPage('pod-kill')">⚡ Launch →</button>
+      </div>
+
+      <div class="exp-card" style="--c:var(--purple)">
+        <div class="exp-num">Experiment 02</div>
+        <div class="exp-title" style="color:var(--purple)">Scale-Down Stress</div>
+        <div class="exp-desc">Scales deployment to 1 replica simulating resource starvation. Auto-rollback restores capacity.</div>
+        <div class="exp-tags">
+          <span class="exp-tag" style="color:var(--purple);border-color:rgba(168,85,247,.3)">Resource</span>
+          <span class="exp-tag" style="color:var(--accent);border-color:rgba(14,165,233,.3)">Kubernetes</span>
+          <span class="exp-tag" style="color:var(--green);border-color:rgba(34,197,94,.3)">~40s</span>
+        </div>
+        <button class="btn btn-purple" onclick="showPage('stress')">🔥 Launch →</button>
+      </div>
+
+      <div class="exp-card" style="--c:var(--cyan)">
+        <div class="exp-num">Experiment 03</div>
+        <div class="exp-title" style="color:var(--cyan)">JMeter Load Test</div>
+        <div class="exp-desc">Simulates concurrent users hitting all REST endpoints. Measures throughput, latency, and error rate.</div>
+        <div class="exp-tags">
+          <span class="exp-tag" style="color:var(--cyan);border-color:rgba(6,214,200,.3)">Load</span>
+          <span class="exp-tag" style="color:var(--accent);border-color:rgba(14,165,233,.3)">Configurable</span>
+          <span class="exp-tag" style="color:var(--green);border-color:rgba(34,197,94,.3)">Custom duration</span>
+        </div>
+        <button class="btn btn-cyan" onclick="showPage('load-test')">▶ Launch →</button>
+      </div>
+    </div>
+
+    <!-- Pod status -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Live Pod Status</div>
+        <div class="pod-list" id="ov-pods"><div class="tl-empty">Fetching pods…</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">App Health</div>
+        <div id="ov-health" style="font-size:12px;color:var(--muted)">Checking…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ POD KILL ══════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-pod-kill">
+    <div class="page-head">
+      <h1>Experiment 01 — Pod Kill</h1>
+      <p>ChaosToolkit · chaosk8s.pod.actions.terminate_pods</p>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="exp-card" style="--c:var(--red)">
+          <div class="exp-desc" style="margin-bottom:0">
+            Selects one random pod from the <code style="color:var(--accent)">tradesphere</code> namespace
+            and sends <code style="color:var(--red)">SIGKILL</code>. Kubernetes must detect the deletion,
+            schedule a replacement, pull the image, pass readiness probes, and restore full replica count
+            within the <strong style="color:var(--green)">30-second SLO</strong>.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Status</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div class="phase-badge" id="pk-badge" style="background:rgba(74,96,128,.1);color:var(--muted)">
+              <span>●</span> Idle
+            </div>
+            <span id="pk-live-tag" style="display:none;font-size:10px;color:var(--red);animation:blink 1s infinite">● LIVE</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" id="pk-bar" style="width:0%;color:var(--red)"></div></div>
+            <div class="progress-pct" id="pk-pct">0%</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-red" id="pk-run-btn" onclick="startPodKill()">⚡ Inject Pod Kill</button>
+            <button class="btn btn-ghost btn-sm" id="pk-reset-btn" style="display:none" onclick="resetPodKill()">↺ Reset</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Pod Status</div>
+          <div class="pod-list" id="pk-pods"><div class="tl-empty">Fetching…</div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Live Log Stream</div>
+          <div class="timeline" id="pk-timeline"><div class="tl-empty">Logs appear here when experiment starts</div></div>
+        </div>
+        <div id="pk-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STRESS ════════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-stress">
+    <div class="page-head">
+      <h1>Experiment 02 — Scale-Down Stress</h1>
+      <p>ChaosToolkit · chaosk8s.deployment.actions.scale_deployment</p>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="exp-card" style="--c:var(--purple)">
+          <div class="exp-desc" style="margin-bottom:0">
+            Scales the TradeSphere deployment to <strong style="color:var(--red)">1 replica</strong> simulating
+            resource pressure. Verifies the app still serves traffic with reduced capacity.
+            The rollback action automatically restores <strong style="color:var(--green)">2 replicas</strong>.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Status</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div class="phase-badge" id="st-badge" style="background:rgba(74,96,128,.1);color:var(--muted)">
+              <span>●</span> Idle
+            </div>
+            <span id="st-live-tag" style="display:none;font-size:10px;color:var(--purple);animation:blink 1s infinite">● LIVE</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" id="st-bar" style="width:0%;color:var(--purple)"></div></div>
+            <div class="progress-pct" id="st-pct">0%</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-purple" id="st-run-btn" onclick="startStress()">🔥 Run Stress Test</button>
+            <button class="btn btn-ghost btn-sm" id="st-reset-btn" style="display:none" onclick="resetStress()">↺ Reset</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Pod Status</div>
+          <div class="pod-list" id="st-pods"><div class="tl-empty">Fetching…</div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Live Log Stream</div>
+          <div class="timeline" id="st-timeline"><div class="tl-empty">Logs appear here when experiment starts</div></div>
+        </div>
+        <div id="st-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LOAD TEST ═════════════════════════════════════════════════════════ -->
+  <div class="page" id="page-load-test">
+    <div class="page-head">
+      <h1>Experiment 03 — JMeter Load Test</h1>
+      <p>Apache JMeter 5.6 · 20 users · all REST endpoints</p>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="exp-card" style="--c:var(--cyan)">
+          <div class="exp-desc" style="margin-bottom:14px">Configure the number of concurrent users and test duration, then launch. All six TradeSphere API endpoints are tested simultaneously.</div>
+          <div class="slider-group">
+            <div class="slider-lbl">Concurrent Users <span class="slider-val" id="lt-usr-val">20</span></div>
+            <input type="range" min="5" max="50" value="20" id="lt-usr-slider" oninput="document.getElementById('lt-usr-val').textContent=this.value">
+          </div>
+          <div class="slider-group">
+            <div class="slider-lbl">Duration <span class="slider-val" id="lt-dur-val">60s</span></div>
+            <input type="range" min="20" max="120" value="60" id="lt-dur-slider" oninput="document.getElementById('lt-dur-val').textContent=this.value+'s'">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+            <div style="padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:9px;color:var(--muted)">GET /api/accounts/</div>
+            <div style="padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:9px;color:var(--muted)">GET /api/users/</div>
+            <div style="padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:9px;color:var(--muted)">GET /api/trades/</div>
+            <div style="padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:9px;color:var(--muted)">POST /api/accounts/</div>
+            <div style="padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:9px;color:var(--muted)">POST /api/trades/</div>
+            <div style="padding:5px 9px;background:var(--surface);border:1px solid var(--border);border-radius:5px;font-size:9px;color:var(--muted)">GET /health/ready</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Status</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div class="phase-badge" id="lt-badge" style="background:rgba(74,96,128,.1);color:var(--muted)">
+              <span>●</span> Idle
+            </div>
+            <span id="lt-live-tag" style="display:none;font-size:10px;color:var(--cyan);animation:blink 1s infinite">● RUNNING</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" id="lt-bar" style="width:0%;color:var(--cyan)"></div></div>
+            <div class="progress-pct" id="lt-pct">0%</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-cyan" id="lt-run-btn" onclick="startLoadTest()">▶ Run Load Test</button>
+            <button class="btn btn-ghost btn-sm" id="lt-reset-btn" style="display:none" onclick="resetLoadTest()">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Live Log Stream</div>
+          <div class="timeline" id="lt-timeline"><div class="tl-empty">Logs appear here when test starts</div></div>
+        </div>
+        <div id="lt-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RESULTS & SLO ═════════════════════════════════════════════════════ -->
+  <div class="page" id="page-results">
+    <div class="page-head">
+      <h1>Results &amp; SLO Dashboard</h1>
+      <p>All completed experiments this session</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Experiment History</div>
+        <div id="results-list"><div class="tl-empty">No experiments run yet</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">SLO Compliance</div>
+        <div id="slo-list"></div>
+        <div style="text-align:center;margin-top:16px" id="slo-ring"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETUP GUIDE ═══════════════════════════════════════════════════════ -->
+  <div class="page" id="page-setup">
+    <div class="page-head">
+      <h1>Setup Guide</h1>
+      <p>How to deploy the Chaos UI on Kubernetes alongside TradeSphere</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Step-by-Step Deployment</div>
+        <div id="setup-steps"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Local Quick Start (no Kubernetes)</div>
+        <pre class="cmd"># 1. Install dependencies
+pip install flask requests chaostoolkit \
+    chaostoolkit-kubernetes
+
+# 2. Set target URL (your running TradeSphere)
+export TARGET_APP_URL=http://localhost:5000
+export APP_NAMESPACE=tradesphere
+
+# 3. Start Chaos UI
+python run.py
+# Opens at http://localhost:8090
+
+# 4. In another terminal, keep port-forward alive
+kubectl port-forward service/tradesphere-svc \
+    5000:80 -n tradesphere --pod-running-timeout=5m &</pre>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Config — injected by Flask from environment variables
+// ═══════════════════════════════════════════════════════════════════════════
+const TARGET_URL = "{{ target_url }}";
+const NAMESPACE  = "{{ namespace }}";
+
+// Set sidebar info
+document.getElementById('sb-target').textContent = TARGET_URL.replace('http://','');
+document.getElementById('sb-ns').textContent     = NAMESPACE;
+document.getElementById('tb-target').textContent = TARGET_URL.replace('http://','');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Navigation
+// ═══════════════════════════════════════════════════════════════════════════
+const PAGE_TITLES = {
+  'overview':'Overview','pod-kill':'Pod Kill Experiment',
+  'stress':'Scale-Down Stress','load-test':'Load Test',
+  'results':'Results & SLO','setup':'Setup Guide'
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll(`.nav-btn[onclick="showPage('${id}')"]`).forEach(b => b.classList.add('active'));
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[id] || id;
+  if (id === 'results')  renderResults();
+  if (id === 'setup')    renderSetup();
+  if (id === 'overview') renderOverviewPods();
+  if (id === 'pod-kill') { refreshPods('pk-pods'); }
+  if (id === 'stress')   { refreshPods('st-pods'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Status polling
+// ═══════════════════════════════════════════════════════════════════════════
+let statusData = { pods: [], app_health: {} };
+
+async function refreshStatus() {
+  try {
+    const r = await fetch('/api/status');
+    statusData = await r.json();
+    const pods   = statusData.pods || [];
+    const health = statusData.app_health || {};
+    const running = pods.filter(p => p.phase === 'Running').length;
+    const ok = health.status === 'ready';
+    document.getElementById('tb-pods').textContent   = `${running}/${pods.length}`;
+    document.getElementById('tb-pods').style.color   = running > 0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('tb-health').textContent  = ok ? 'Ready' : 'Error';
+    document.getElementById('tb-health').style.color  = ok ? 'var(--green)' : 'var(--red)';
+    renderOverviewPods();
+    renderOverviewHealth();
+  } catch(e) {
+    document.getElementById('tb-health').textContent = 'Unreachable';
+    document.getElementById('tb-health').style.color = 'var(--red)';
+  }
+}
+
+// ── Render pod list in any container ───────────────────────────────────────
+function podCard(p) {
+  const c = { Running:'#22c55e', Terminating:'#ef4444', Pending:'#eab308',
+               Succeeded:'#0ea5e9', Failed:'#ef4444', Unknown:'#4a6080' }[p.phase] || '#4a6080';
+  const pulse = ['Terminating','Pending'].includes(p.phase);
+  const short = p.name.split('-').slice(-1)[0];
+  return `
+  <div class="pod-card" style="border-color:${c}33">
+    <div class="pod-icon" style="color:${c};background:${c}12">
+      ⬡
+      <div class="pod-status-dot" style="background:${c};${pulse?'animation:ping .9s infinite':'animation:pulse 2s infinite'}"></div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div class="pod-name" style="color:${c}">${short}</div>
+      <div class="pod-node">${p.node || '—'}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="pod-state" style="background:${c}18;color:${c}">${p.phase}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px">${p.ready?'ready':'not ready'}</div>
+    </div>
+  </div>`;
+}
+
+function renderPods(containerId, pods) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = pods.length
+    ? pods.map(podCard).join('')
+    : '<div class="tl-empty">No pods found in namespace</div>';
+}
+
+function renderOverviewPods() { renderPods('ov-pods', statusData.pods || []); }
+function refreshPods(cid) { renderPods(cid, statusData.pods || []); }
+
+function renderOverviewHealth() {
+  const h  = statusData.app_health || {};
+  const ok = h.status === 'ready';
+  document.getElementById('ov-health').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="width:12px;height:12px;border-radius:50%;background:${ok?'var(--green)':'var(--red)'};${ok?'animation:pulse 2s infinite':''}"></div>
+      <span style="font-size:14px;font-weight:700;color:${ok?'var(--green)':'var(--red)'}">${h.status || 'unknown'}</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.9">
+      Target: <span style="color:var(--accent)">${TARGET_URL}</span><br>
+      HTTP code: <span style="color:var(--text)">${h.code || 0}</span><br>
+      DB: <span style="color:var(--text)">${h.body?.db || '—'}</span>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Timeline log rendering
+// ═══════════════════════════════════════════════════════════════════════════
+const LEVEL_COLORS = {
+  INFO:'var(--text)', ERROR:'var(--red)', WARNING:'var(--yellow)',
+  SUCCESS:'var(--green)', PING:'var(--muted)', DONE:'var(--cyan)'
+};
+const LEVEL_ICONS = {
+  INFO:'i', ERROR:'✗', WARNING:'!', SUCCESS:'✓', PING:'·', DONE:'★'
+};
+
+function appendLog(tlId, entry) {
+  const tl = document.getElementById(tlId);
+  if (!tl) return;
+  if (tl.querySelector('.tl-empty')) tl.innerHTML = '';
+  const c    = LEVEL_COLORS[entry.level] || 'var(--text)';
+  const icon = LEVEL_ICONS[entry.level]  || 'i';
+  const pulse = ['ERROR','WARNING'].includes(entry.level);
+  const div = document.createElement('div');
+  div.className = 'tl-entry';
+  div.innerHTML = `
+    <div class="tl-dot-wrap">
+      <div class="tl-dot" style="color:${c};background:${c}12">${icon}</div>
+      ${pulse ? `<div class="tl-ring" style="color:${c}"></div>` : ''}
+    </div>
+    <div>
+      <div class="tl-ts">${entry.ts}</div>
+      <div class="tl-text" style="color:${c}">${entry.msg}</div>
+    </div>`;
+  tl.appendChild(div);
+  tl.scrollTop = tl.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Score ring SVG
+// ═══════════════════════════════════════════════════════════════════════════
+function scoreRing(score, size=90, label='') {
+  const r = size/2-10, circ = 2*Math.PI*r;
+  const c = score>=80?'#22c55e':score>=55?'#eab308':'#ef4444';
+  return `<div class="score-ring-wrap">
+    <svg width="${size}" height="${size}">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#162238" stroke-width="8"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${c}" stroke-width="8"
+        stroke-dasharray="${(score/100)*circ} ${circ}" stroke-linecap="round"
+        transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dasharray .8s"/>
+      <text x="${size/2}" y="${size/2}" text-anchor="middle" dominant-baseline="central"
+        fill="${c}" font-size="18" font-weight="700" font-family="monospace">${score}</text>
+      <text x="${size/2}" y="${size/2+15}" text-anchor="middle" dominant-baseline="central"
+        fill="#4a6080" font-size="8" font-family="monospace">/100</text>
+    </svg>
+    ${label ? `<div style="font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.06em;text-transform:uppercase">${label}</div>` : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Result card HTML
+// ═══════════════════════════════════════════════════════════════════════════
+function resultCardHTML(result) {
+  const ok    = ['completed','passed'].includes(result.status);
+  const color = ok ? '#22c55e' : result.status === 'deviated' ? '#eab308' : '#ef4444';
+  const metrics = result.metrics
+    ? Object.entries(result.metrics).map(([k,v]) => `
+        <div class="result-pill" style="background:rgba(14,165,233,.06)">
+          <span class="result-pill-lbl">${k.replace('_',' ')}</span>
+          <span class="result-pill-val" style="color:var(--accent)">${v}</span>
+        </div>`).join('')
+    : '';
+  return `
+  <div class="result-card" style="background:${color}08;border-color:${color}33">
+    <div class="result-head">
+      <div>
+        <div class="result-title" style="color:${color}">${ok?'✓ Experiment Passed':'⚠ '+result.status.charAt(0).toUpperCase()+result.status.slice(1)}</div>
+        <div class="result-sub">${result.type} · ${result.duration}s</div>
+      </div>
+      ${scoreRing(result.score, 80)}
+    </div>
+    ${metrics ? `<div class="result-pills">${metrics}</div>` : ''}
+    <div class="result-findings">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Findings</div>
+      ${(result.findings||[]).map(f => `
+        <div class="result-finding">
+          <span style="color:${f.ok?'#22c55e':'#eab308'}">${f.ok?'✓':'⚠'}</span>
+          <span style="color:${f.ok?'var(--text)':'#eab308'}">${f.text}</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Phase badge helper
+// ═══════════════════════════════════════════════════════════════════════════
+function setPhase(badgeId, label, color) {
+  const b = document.getElementById(badgeId);
+  if (!b) return;
+  b.style.background = color + '18';
+  b.style.color = color;
+  b.innerHTML = `<span style="animation:pulse 1s infinite">●</span> ${label}`;
+}
+function setProgress(barId, pctId, pct, color) {
+  const b = document.getElementById(barId);
+  if (b) { b.style.width = pct+'%'; b.style.color = color; if(pct>0&&pct<100) b.classList.add('running'); else b.classList.remove('running'); }
+  const p = document.getElementById(pctId);
+  if (p) p.textContent = Math.round(pct)+'%';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SSE stream consumer — connects to /api/stream/<job_id>
+// Feeds log lines to timeline, polls job status for progress bar
+// ═══════════════════════════════════════════════════════════════════════════
+function consumeStream(jobId, tlId, barId, pctId, badgeId, liveTagId, resetBtnId, runBtnId, resultId, colorVar) {
+  const color = getComputedStyle(document.documentElement).getPropertyValue(colorVar).trim();
+  let progress = 5;
+  setProgress(barId, pctId, progress, color);
+  setPhase(badgeId, 'Starting…', color);
+  document.getElementById(liveTagId).style.display = 'inline';
+  document.getElementById(runBtnId).disabled = true;
+
+  const es = new EventSource(`/api/stream/${jobId}`);
+
+  es.onmessage = (e) => {
+    const entry = JSON.parse(e.data);
+    if (entry.msg === '__DONE__') {
+      es.close();
+      document.getElementById(liveTagId).style.display = 'none';
+      document.getElementById(runBtnId).disabled = false;
+      document.getElementById(resetBtnId).style.display = 'inline-flex';
+      setProgress(barId, pctId, 100, '#22c55e');
+      setPhase(badgeId, 'Complete', '#22c55e');
+      // Fetch final result
+      fetch(`/api/job/${jobId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.result) {
+            document.getElementById(resultId).innerHTML = resultCardHTML(data.result);
+            refreshStatus();
+          }
+        });
+      return;
+    }
+    if (entry.level !== 'PING') {
+      appendLog(tlId, entry);
+      // Simulate progress from log content
+      const msg = entry.msg.toLowerCase();
+      if (msg.includes('steady state'))      progress = Math.max(progress, 15);
+      if (msg.includes('met!'))              progress = Math.max(progress, 25);
+      if (msg.includes('playing'))           progress = Math.max(progress, 35);
+      if (msg.includes('action'))            progress = Math.max(progress, 45);
+      if (msg.includes('pausing'))           progress = Math.max(progress, 55);
+      if (msg.includes('probe'))             progress = Math.max(progress, 70);
+      if (msg.includes('deviated'))          progress = Math.max(progress, 90);
+      if (msg.includes('completed'))         progress = Math.max(progress, 90);
+      if (msg.includes('finished'))          progress = Math.max(progress, 95);
+      if (entry.level === 'SUCCESS')         progress = Math.max(progress, 80);
+      if (entry.level === 'ERROR')           setPhase(badgeId, 'Error', '#ef4444');
+      setProgress(barId, pctId, progress, color);
+    }
+  };
+
+  es.onerror = () => {
+    es.close();
+    document.getElementById(liveTagId).style.display = 'none';
+    document.getElementById(runBtnId).disabled = false;
+    document.getElementById(resetBtnId).style.display = 'inline-flex';
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pod Kill experiment
+// ═══════════════════════════════════════════════════════════════════════════
+async function startPodKill() {
+  document.getElementById('pk-timeline').innerHTML = '';
+  document.getElementById('pk-result').innerHTML = '';
+  document.getElementById('pk-reset-btn').style.display = 'none';
+  setPhase('pk-badge', 'Launching…', '#ef4444');
+  try {
+    const r    = await fetch('/api/experiment/pod-kill', { method:'POST' });
+    const data = await r.json();
+    consumeStream(data.job_id,'pk-timeline','pk-bar','pk-pct','pk-badge','pk-live-tag','pk-reset-btn','pk-run-btn','pk-result','--red');
+  } catch(e) {
+    setPhase('pk-badge','Error','#ef4444');
+    appendLog('pk-timeline',{ts:'--:--:--',level:'ERROR',msg:'Failed to start: '+e.message});
+  }
+}
+function resetPodKill() {
+  document.getElementById('pk-timeline').innerHTML = '<div class="tl-empty">Logs appear here when experiment starts</div>';
+  document.getElementById('pk-result').innerHTML = '';
+  document.getElementById('pk-reset-btn').style.display = 'none';
+  setPhase('pk-badge','Idle','#4a6080');
+  setProgress('pk-bar','pk-pct',0,'#ef4444');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Stress experiment
+// ═══════════════════════════════════════════════════════════════════════════
+async function startStress() {
+  document.getElementById('st-timeline').innerHTML = '';
+  document.getElementById('st-result').innerHTML = '';
+  document.getElementById('st-reset-btn').style.display = 'none';
+  setPhase('st-badge','Launching…','#a855f7');
+  try {
+    const r    = await fetch('/api/experiment/stress', { method:'POST' });
+    const data = await r.json();
+    consumeStream(data.job_id,'st-timeline','st-bar','st-pct','st-badge','st-live-tag','st-reset-btn','st-run-btn','st-result','--purple');
+  } catch(e) {
+    setPhase('st-badge','Error','#ef4444');
+    appendLog('st-timeline',{ts:'--:--:--',level:'ERROR',msg:'Failed to start: '+e.message});
+  }
+}
+function resetStress() {
+  document.getElementById('st-timeline').innerHTML = '<div class="tl-empty">Logs appear here when experiment starts</div>';
+  document.getElementById('st-result').innerHTML = '';
+  document.getElementById('st-reset-btn').style.display = 'none';
+  setPhase('st-badge','Idle','#4a6080');
+  setProgress('st-bar','st-pct',0,'#a855f7');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Load test
+// ═══════════════════════════════════════════════════════════════════════════
+async function startLoadTest() {
+  document.getElementById('lt-timeline').innerHTML = '';
+  document.getElementById('lt-result').innerHTML = '';
+  document.getElementById('lt-reset-btn').style.display = 'none';
+  setPhase('lt-badge','Launching…','#0ea5e9');
+  const users    = document.getElementById('lt-usr-slider').value;
+  const duration = document.getElementById('lt-dur-slider').value;
+  try {
+    const r    = await fetch('/api/loadtest/run', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ users: parseInt(users), duration: parseInt(duration) })
+    });
+    const data = await r.json();
+    consumeStream(data.job_id,'lt-timeline','lt-bar','lt-pct','lt-badge','lt-live-tag','lt-reset-btn','lt-run-btn','lt-result','--cyan');
+  } catch(e) {
+    setPhase('lt-badge','Error','#ef4444');
+    appendLog('lt-timeline',{ts:'--:--:--',level:'ERROR',msg:'Failed to start: '+e.message});
+  }
+}
+function resetLoadTest() {
+  document.getElementById('lt-timeline').innerHTML = '<div class="tl-empty">Logs appear here when test starts</div>';
+  document.getElementById('lt-result').innerHTML = '';
+  document.getElementById('lt-reset-btn').style.display = 'none';
+  setPhase('lt-badge','Idle','#4a6080');
+  setProgress('lt-bar','lt-pct',0,'#0ea5e9');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Results page
+// ═══════════════════════════════════════════════════════════════════════════
+async function renderResults() {
+  try {
+    const { results } = await (await fetch('/api/results')).json();
+    const list = document.getElementById('results-list');
+    if (!results.length) { list.innerHTML = '<div class="tl-empty">No experiments run yet this session</div>'; return; }
+    list.innerHTML = results.map(r => {
+      const ok = ['completed','passed'].includes(r.status);
+      const c  = ok?'#22c55e':r.status==='deviated'?'#eab308':'#ef4444';
+      return `<div class="hist-row">
+        <div>
+          <div class="hist-type">${r.type}</div>
+          <div class="hist-dur">Duration: ${r.duration}s · Finished: ${r.finished_at}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${scoreRing(r.score, 56)}
+          <span class="status-pill ${r.status}">${r.status}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    // SLO section
+    const avgScore = Math.round(results.reduce((s,r) => s+r.score, 0) / results.length);
+    const slos = [
+      { name:'Availability',       pct: statusData.app_health?.status==='ready' ? 99.9 : 0,  target:99.9 },
+      { name:'Chaos Resilience',   pct: avgScore,   target:70 },
+      { name:'Recovery < 30s',     pct: results.find(r=>r.type==='Pod Kill')?.score || 0,   target:70 },
+      { name:'Load Test Error <1%',pct: results.find(r=>r.type?.includes('Load'))?.status==='passed'?99:50, target:99 },
+    ];
+    document.getElementById('slo-list').innerHTML = slos.map(s => {
+      const pass = s.pct >= s.target;
+      const c = pass ? '#22c55e' : '#ef4444';
+      return `<div class="slo-row">
+        <div class="slo-name">${s.name}</div>
+        <div class="slo-bar-wrap"><div class="slo-bar-fill" style="width:${Math.min(s.pct,100)}%;background:${c}"></div></div>
+        <div class="slo-val" style="color:${c}">${s.pct}%</div>
+      </div>`;
+    }).join('');
+    document.getElementById('slo-ring').innerHTML = scoreRing(avgScore, 110, 'Overall Resilience');
+  } catch(e) {
+    document.getElementById('results-list').innerHTML = '<div class="tl-empty">Error loading results</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Setup guide
+// ═══════════════════════════════════════════════════════════════════════════
+function renderSetup() {
+  const steps = [
+    { n:'1', color:'#0ea5e9', title:'Build the Chaos UI Docker image',
+      desc:'From the chaosui/ project root:',
+      cmd:`cd chaosui/
+docker build -t chaosui:latest .
+# Verify it built
+docker images | grep chaosui` },
+    { n:'2', color:'#a855f7', title:'Load image into kind cluster',
+      desc:'kind cannot pull from your local Docker, so load it manually:',
+      cmd:`kind load docker-image chaosui:latest --name demo-cluster
+# Verify
+docker exec -it demo-cluster-control-plane \\
+  crictl images | grep chaosui` },
+    { n:'3', color:'#eab308', title:'Deploy with Helm',
+      desc:'This creates the chaosui deployment, service, and RBAC roles:',
+      cmd:`helm upgrade --install chaosui ./helm/chaosui \\
+  --namespace tradesphere \\
+  --set targetAppUrl=http://tradesphere-svc.tradesphere.svc.cluster.local \\
+  --set appNamespace=tradesphere \\
+  --wait
+# Check pods
+kubectl get pods -n tradesphere` },
+    { n:'4', color:'#22c55e', title:'Access the Chaos UI',
+      desc:'Port-forward the Chaos UI service to your browser:',
+      cmd:`kubectl port-forward service/chaosui-svc \\
+  8090:8090 -n tradesphere &
+# Open in browser:
+# http://localhost:8090` },
+    { n:'5', color:'#ef4444', title:'Run your first experiment',
+      desc:'In the browser at localhost:8090 → click "Pod Kill" → "⚡ Inject Pod Kill". Watch the live log stream as the pod is terminated and Kubernetes recovers it.',
+      cmd:`# Also run directly from terminal if needed:
+APP_NAMESPACE=tradesphere \\
+APP_URL=http://localhost:8080 \\
+chaos run chaos_experiments/pod_kill.json` },
+  ];
+  document.getElementById('setup-steps').innerHTML = steps.map(s => `
+    <div class="setup-step">
+      <div class="step-num" style="color:${s.color};border-color:${s.color}44;background:${s.color}10">${s.n}</div>
+      <div style="flex:1">
+        <div class="step-title" style="color:${s.color}">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+        <pre class="cmd">${s.cmd}</pre>
+      </div>
+    </div>`).join('');
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+refreshStatus();
+setInterval(refreshStatus, 15000);  // auto-refresh pods every 15s
+renderSetup();
+</script>
+</body>
+</html>

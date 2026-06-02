@@ -1,0 +1,27 @@
+# =============================================================================
+# FILE: requirements.txt  (Chaos UI)
+# PURPOSE: Python packages needed by the Chaos Control Center.
+#
+# Install locally:  pip install -r requirements.txt
+# In Docker:        pip install runs during docker build
+# =============================================================================
+ 
+# Flask — web framework that serves the UI and the /api/* endpoints
+Flask==3.0.3
+ 
+# requests — used by /api/status to call TradeSphere's /health/ready endpoint
+requests==2.32.3
+ 
+# gunicorn — production WSGI server used inside Docker/Kubernetes
+# threaded workers are needed because SSE uses long-lived connections
+gunicorn==22.0.0
+ 
+# chaostoolkit — the core chaos engineering CLI that runs experiments
+chaostoolkit==1.18.0
+ 
+# chaostoolkit-kubernetes — the driver that knows how to talk to Kubernetes
+# provides chaosk8s.pod.actions.terminate_pods etc.
+chaostoolkit-kubernetes==0.27.0
+ 
+# chaostoolkit-reporting — optional: generates HTML reports from journals
+# install separately if you want: pip install chaostoolkit-reporting
