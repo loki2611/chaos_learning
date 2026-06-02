@@ -1,13 +1,55 @@
-name: Chaos Learning Pipeline
+name: TradeSphere CI/CD Pipeline
+
 on:
-  workflow_dispatch:
   push:
-      branches: [main]
+    branches: [main]
+  workflow_dispatch:      # allows manual trigger from GitHub UI
 
 jobs:
-  hello:
+
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Test Pipeline
-        run: echo "GitHub Actions is connected!"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Test health endpoint
+        run: |
+          python -c "
+          from app import create_app
+          app = create_app({'TESTING': True, 'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:'})
+          client = app.test_client()
+          r = client.get('/health/live')
+          assert r.status_code == 200, f'Health check failed: {r.status_code}'
+          print('Health check passed!')
+          "
+
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test               # only runs if test job passes
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: docker build -t tradesphere:${{ github.sha }} .
+
+      - name: Smoke test the image
+        run: |
+          docker run -d --name test-container \
+            -p 5000:5000 tradesphere:${{ github.sha }}
+          sleep 5
+          curl --fail http://localhost:5000/health/live
+          docker stop test-container
+          docker rm test-container
+
+      - name: Tag as latest
+        run: docker tag tradesphere:${{ github.sha }} tradesphere:latest
