@@ -1,0 +1,102 @@
+{
+  "version": "1.0.0",
+  "title": "TradeSphere — Pod Kill Resilience Test",
+  "description": "Terminates a random pod and validates K8s self-healing. Uses service URL so port-forward survives pod restarts.",
+  "tags": ["kubernetes", "pod-kill", "tradesphere"],
+
+  "configuration": {
+    "app_namespace": {
+      "type": "env",
+      "key": "APP_NAMESPACE",
+      "default": "tradesphere"
+    },
+    "app_url": {
+      "type": "env",
+      "key": "APP_URL",
+      "default": "http://localhost:8080"
+    }
+  },
+
+  "steady-state-hypothesis": {
+    "title": "Application is healthy before and after chaos",
+    "probes": [
+      {
+        "name": "health-endpoint-responds",
+        "type": "probe",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "${app_url}/health/ready",
+          "timeout": 10
+        }
+      },
+      {
+        "name": "at-least-one-pod-running",
+        "type": "probe",
+        "tolerance": true,
+        "provider": {
+          "type": "python",
+          "module": "chaosk8s.pod.probes",
+          "func": "pods_in_phase",
+          "arguments": {
+            "label_selector": "app=tradesphere",
+            "phase": "Running",
+            "ns": "${app_namespace}"
+          }
+        }
+      }
+    ]
+  },
+
+  "method": [
+    {
+      "name": "terminate-one-tradesphere-pod",
+      "type": "action",
+      "provider": {
+        "type": "python",
+        "module": "chaosk8s.pod.actions",
+        "func": "terminate_pods",
+        "arguments": {
+          "label_selector": "app=tradesphere",
+          "ns": "${app_namespace}",
+          "qty": 1,
+          "rand": true,
+          "grace_period": 0
+        }
+      },
+      "pauses": {
+        "after": 30
+      }
+    },
+    {
+      "name": "verify-replacement-pod-running",
+      "type": "probe",
+      "tolerance": true,
+      "provider": {
+        "type": "python",
+        "module": "chaosk8s.pod.probes",
+        "func": "pods_in_phase",
+        "arguments": {
+          "label_selector": "app=tradesphere",
+          "phase": "Running",
+          "ns": "${app_namespace}"
+        }
+      },
+      "pauses": {
+        "before": 5
+      }
+    },
+    {
+      "name": "verify-app-still-serves-traffic",
+      "type": "probe",
+      "tolerance": 200,
+      "provider": {
+        "type": "http",
+        "url": "${app_url}/health/ready",
+        "timeout": 15
+      }
+    }
+  ],
+
+  "rollbacks": []
+}
